@@ -33,44 +33,61 @@ class Pawn(Piece):
     """
     A class representing a chess pawn.
     """
+    WHITE_PAWN_LINE = 1
+    BLACK_PAWN_LINE = 6
+    FORWARD_TWO_SPACES = 2
+    LEFT = -1
+    RIGHT = 1
 
     def get_moves_by_player_color(self):
-        move_forward_once = 1
-        move_forward_twice = 2
-        row_first_time_move_forward_twice = 1
-        if self.player == Player.BLACK:
-            move_forward_once = -1
-            move_forward_twice = -2
-            row_first_time_move_forward_twice = 6
-        return move_forward_once, move_forward_twice, row_first_time_move_forward_twice
+        move_forward = 1 if self.player == Player.WHITE else -1
+        row_first_time_move = self.WHITE_PAWN_LINE if self.player == Player.WHITE else self.BLACK_PAWN_LINE
+        return move_forward, row_first_time_move
 
     def in_bounds(self, move) -> bool:
         return move in range(0, 8)
 
+    def first_time_move(self, current_square, row_first_time_move, move_forward, board, list_moves):
+        # Verify if it is the first time the pawn moves
+        if current_square.row == row_first_time_move:
+            square_two_spaces_in_front = Square.at(current_square.row + move_forward * self.FORWARD_TWO_SPACES,
+                                                   current_square.col)
+            # Can move two squares forward
+            if self.in_bounds(square_two_spaces_in_front.row) and not board.get_piece(square_two_spaces_in_front):
+                list_moves.append(square_two_spaces_in_front)
+
+    def verify_attack_different_color(self, piece):
+        return self.player != piece.player
+
+    def verify_attack_diagonally(self, current_square, move_forward, board, list_moves):
+        # Attack diagonally (2 spaces possible)
+        square_diagonal_left = Square.at(current_square.row + move_forward, current_square.col + self.LEFT)
+        square_diagonal_right = Square.at(current_square.row + move_forward, current_square.col + self.RIGHT)
+
+        # Can't attack same color and if a piece isn't there
+        if self.in_bounds(square_diagonal_left.col):
+            diagonal_piece_left = board.get_piece(square_diagonal_left)
+            if diagonal_piece_left and self.verify_attack_different_color(diagonal_piece_left):
+                list_moves.append(square_diagonal_left)
+        if self.in_bounds(square_diagonal_right.col):
+            diagonal_piece_right = board.get_piece(square_diagonal_right)
+            if diagonal_piece_right and self.verify_attack_different_color(diagonal_piece_right):
+                list_moves.append(square_diagonal_right)
+
     def get_available_moves(self, board) -> List[Square]:
         current_square = board.find_piece(self)
         list_moves = []
-        move_forward_once, move_forward_twice, row_first_time_move = self.get_moves_by_player_color()
+        move_forward, row_first_time_move = self.get_moves_by_player_color()
 
-        square_in_front = Square.at(current_square.row + move_forward_once, current_square.col)
+        square_in_front = Square.at(current_square.row + move_forward, current_square.col)
         # Can move forward at least once
         if self.in_bounds(square_in_front.row) and not board.get_piece(square_in_front):
             list_moves.append(square_in_front)
-            # Verify if it is the first time the pawn moves
-            if current_square.row == row_first_time_move:
-                square_two_spaces_in_front = Square.at(current_square.row + move_forward_twice, current_square.col)
-                # Can move two squares forward
-                if self.in_bounds(square_two_spaces_in_front.row) and not board.get_piece(square_two_spaces_in_front):
-                    list_moves.append(square_two_spaces_in_front)
-            # Attack diagonally (2 spaces possible)
-            square_diagonal1 = Square.at(current_square.row + move_forward_once, current_square.col - 1)
-            square_diagonal2 = Square.at(current_square.row + move_forward_once, current_square.col + 1)
-            diagonal_piece1 = board.get_piece(square_diagonal1)
-            diagonal_piece2 = board.get_piece(square_diagonal2)
-            if self.in_bounds(square_diagonal1.col) and diagonal_piece1 and self.player != diagonal_piece1.player:
-                list_moves.append(square_diagonal1)
-            if self.in_bounds(square_diagonal2.col) and diagonal_piece2 and self.player != diagonal_piece2.player:
-                list_moves.append(square_diagonal2)
+            # Verify first time move of pawn
+            self.first_time_move(current_square, row_first_time_move, move_forward, board, list_moves)
+            # Verify attack diagonally
+            self.verify_attack_diagonally(current_square, move_forward, board, list_moves)
+
         return list_moves
 
 
