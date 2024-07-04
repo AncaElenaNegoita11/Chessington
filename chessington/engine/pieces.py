@@ -34,27 +34,29 @@ class Pawn(Piece):
     A class representing a chess pawn.
     """
 
+    def get_moves_by_player_color(self):
+        move_forward_once = 1
+        move_forward_twice = 2
+        row_first_time_move_forward_twice = 1
+        if self.player == Player.BLACK:
+            move_forward_once = -1
+            move_forward_twice = -2
+            row_first_time_move_forward_twice = 6
+        return move_forward_once, move_forward_twice, row_first_time_move_forward_twice
+
     def get_available_moves(self, board) -> List[Square]:
         current_square = board.find_piece(self)
         list_moves = []
-        if self.player == Player.BLACK:
-            if current_square.row == 6:
-                square_two_spaces_in_front = Square.at(current_square.row - 2, current_square.col)
+        move_forward_once, move_forward_twice, row_first_time_move = self.get_moves_by_player_color()
+
+        square_in_front = Square.at(current_square.row + move_forward_once, current_square.col)
+        if not board.get_piece(square_in_front):
+            list_moves.append(square_in_front)
+            if current_square.row == row_first_time_move:
+                square_two_spaces_in_front = Square.at(current_square.row + move_forward_twice, current_square.col)
                 if not board.get_piece(square_two_spaces_in_front):
                     list_moves.append(square_two_spaces_in_front)
-            square_in_front = Square.at(current_square.row - 1, current_square.col)
-            if not board.get_piece(square_in_front):
-                list_moves.append(square_in_front)
-            return list_moves
-        else:
-            if current_square.row == 1:
-                square_two_spaces_in_front = Square.at(current_square.row + 2, current_square.col)
-                if not board.get_piece(square_two_spaces_in_front):
-                    list_moves.append(square_two_spaces_in_front)
-            square_in_front = Square.at(current_square.row + 1, current_square.col)
-            if not board.get_piece(square_in_front):
-                list_moves.append(square_in_front)
-            return list_moves
+        return list_moves
 
 
 class Knight(Piece):
