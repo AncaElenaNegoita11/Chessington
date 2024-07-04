@@ -44,18 +44,33 @@ class Pawn(Piece):
             row_first_time_move_forward_twice = 6
         return move_forward_once, move_forward_twice, row_first_time_move_forward_twice
 
+    def in_bounds(self, move) -> bool:
+        return move in range(0, 8)
+
     def get_available_moves(self, board) -> List[Square]:
         current_square = board.find_piece(self)
         list_moves = []
         move_forward_once, move_forward_twice, row_first_time_move = self.get_moves_by_player_color()
 
         square_in_front = Square.at(current_square.row + move_forward_once, current_square.col)
-        if not board.get_piece(square_in_front):
+        # Can move forward at least once
+        if self.in_bounds(square_in_front.row) and not board.get_piece(square_in_front):
             list_moves.append(square_in_front)
+            # Verify if it is the first time the pawn moves
             if current_square.row == row_first_time_move:
                 square_two_spaces_in_front = Square.at(current_square.row + move_forward_twice, current_square.col)
-                if not board.get_piece(square_two_spaces_in_front):
+                # Can move two squares forward
+                if self.in_bounds(square_two_spaces_in_front.row) and not board.get_piece(square_two_spaces_in_front):
                     list_moves.append(square_two_spaces_in_front)
+            # Attack diagonally (2 spaces possible)
+            square_diagonal1 = Square.at(current_square.row + move_forward_once, current_square.col - 1)
+            square_diagonal2 = Square.at(current_square.row + move_forward_once, current_square.col + 1)
+            diagonal_piece1 = board.get_piece(square_diagonal1)
+            diagonal_piece2 = board.get_piece(square_diagonal2)
+            if self.in_bounds(square_diagonal1.col) and diagonal_piece1 and self.player != diagonal_piece1.player:
+                list_moves.append(square_diagonal1)
+            if self.in_bounds(square_diagonal2.col) and diagonal_piece2 and self.player != diagonal_piece2.player:
+                list_moves.append(square_diagonal2)
         return list_moves
 
 
