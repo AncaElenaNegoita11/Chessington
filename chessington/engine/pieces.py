@@ -69,6 +69,7 @@ class Pawn(Piece):
             diagonal_piece_left = board.get_piece(square_diagonal_left)
             if diagonal_piece_left and self.verify_attack_different_color(diagonal_piece_left):
                 list_moves.append(square_diagonal_left)
+
         if self.in_bounds(square_diagonal_right.col):
             diagonal_piece_right = board.get_piece(square_diagonal_right)
             if diagonal_piece_right and self.verify_attack_different_color(diagonal_piece_right):
@@ -81,10 +82,11 @@ class Pawn(Piece):
 
         square_in_front = Square.at(current_square.row + move_forward, current_square.col)
         # Can move forward at least once
-        if self.in_bounds(square_in_front.row) and not board.get_piece(square_in_front):
-            list_moves.append(square_in_front)
-            # Verify first time move of pawn
-            self.first_time_move(current_square, row_first_time_move, move_forward, board, list_moves)
+        if self.in_bounds(square_in_front.row):
+            if not board.get_piece(square_in_front):
+                list_moves.append(square_in_front)
+                # Verify first time move of pawn
+                self.first_time_move(current_square, row_first_time_move, move_forward, board, list_moves)
             # Verify attack diagonally
             self.verify_attack_diagonally(current_square, move_forward, board, list_moves)
 
@@ -104,27 +106,97 @@ class Bishop(Piece):
     """
     A class representing a chess bishop.
     """
+    directions = [Square(1, 1), Square(-1, 1), Square(-1, -1), Square(1, -1)]
+
+    def in_bounds(self, move) -> bool:
+        return move.row in range(0, 8) and move.col in range(0, 8)
 
     def get_available_moves(self, board):
-        return []
+        current_square = board.find_piece(self)
+        list_moves = []
+        for direction in self.directions:
+            step = 1
+            while True:
+                next_square = Square.at(current_square.row + direction.row * step,
+                                        current_square.col + direction.col * step)
+                if self.in_bounds(next_square):
+                    piece = board.get_piece(next_square)
+                    if not piece:
+                        list_moves.append(next_square)
+                    else:
+                        if piece.player != self.player:
+                            list_moves.append(next_square)
+                        break
+                else:
+                    break
+                step += 1
+
+        return list_moves
 
 
 class Rook(Piece):
     """
     A class representing a chess rook.
     """
+    directions = [Square(1, 0), Square(-1, 0), Square(0, 1), Square(0, -1)]
+
+    def in_bounds(self, move) -> bool:
+        return move.row in range(0, 8) and move.col in range(0, 8)
 
     def get_available_moves(self, board):
-        return []
+        current_square = board.find_piece(self)
+        list_moves = []
+        for direction in self.directions:
+            step = 1
+            while True:
+                next_square = Square.at(current_square.row + direction.row * step,
+                                        current_square.col + direction.col * step)
+                if self.in_bounds(next_square):
+                    piece = board.get_piece(next_square)
+                    if not piece:
+                        list_moves.append(next_square)
+                    else:
+                        if piece.player != self.player:
+                            list_moves.append(next_square)
+                        break
+                else:
+                    break
+                step += 1
+
+        return list_moves
 
 
 class Queen(Piece):
     """
     A class representing a chess queen.
     """
+    directions = [Square(1, 0), Square(-1, 0), Square(0, 1), Square(0, -1),
+                 Square(1, 1), Square(-1, 1), Square(-1, -1), Square(1, -1)]
+
+    def in_bounds(self, move) -> bool:
+        return move.row in range(0, 8) and move.col in range(0, 8)
 
     def get_available_moves(self, board):
-        return []
+        current_square = board.find_piece(self)
+        list_moves = []
+        for direction in self.directions:
+            step = 1
+            while True:
+                next_square = Square.at(current_square.row + direction.row * step,
+                                        current_square.col + direction.col * step)
+                if self.in_bounds(next_square):
+                    piece = board.get_piece(next_square)
+                    if not piece:
+                        list_moves.append(next_square)
+                    else:
+                        if piece.player != self.player:
+                            list_moves.append(next_square)
+                        break
+                else:
+                    break
+                step += 1
+
+        return list_moves
 
 
 class King(Piece):

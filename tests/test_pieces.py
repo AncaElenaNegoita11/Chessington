@@ -2,6 +2,7 @@ from chessington.engine.board import Board
 from chessington.engine.data import Player, Square
 from chessington.engine.pieces import Pawn
 
+
 class TestPawns:
 
     @staticmethod
