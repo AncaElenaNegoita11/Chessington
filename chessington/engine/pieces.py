@@ -249,6 +249,4 @@ class King(Piece):
 
     def get_available_moves(self, board):
         list_moves_available = get_moves(self, board, self.directions, self.NOT_KING_OR_KNIGHT)
-        for square in list_moves_available:
-            print(square.row, square.col)
         return [square for square in list_moves_available if not self.is_attacked(board, square)]
