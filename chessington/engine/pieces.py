@@ -59,21 +59,20 @@ class Pawn(Piece):
     def verify_attack_different_color(self, piece):
         return self.player != piece.player
 
+    def attack_diagonally(self, square_diagonal, board, list_moves):
+        if self.in_bounds(square_diagonal.col):
+            diagonal_piece_left = board.get_piece(square_diagonal)
+            if diagonal_piece_left and self.verify_attack_different_color(diagonal_piece_left):
+                list_moves.append(square_diagonal)
+
     def verify_attack_diagonally(self, current_square, move_forward, board, list_moves):
         # Attack diagonally (2 spaces possible)
         square_diagonal_left = Square.at(current_square.row + move_forward, current_square.col + self.LEFT)
         square_diagonal_right = Square.at(current_square.row + move_forward, current_square.col + self.RIGHT)
 
         # Can't attack same color and if a piece isn't there
-        if self.in_bounds(square_diagonal_left.col):
-            diagonal_piece_left = board.get_piece(square_diagonal_left)
-            if diagonal_piece_left and self.verify_attack_different_color(diagonal_piece_left):
-                list_moves.append(square_diagonal_left)
-
-        if self.in_bounds(square_diagonal_right.col):
-            diagonal_piece_right = board.get_piece(square_diagonal_right)
-            if diagonal_piece_right and self.verify_attack_different_color(diagonal_piece_right):
-                list_moves.append(square_diagonal_right)
+        self.attack_diagonally(square_diagonal_left, board, list_moves)
+        self.attack_diagonally(square_diagonal_right, board, list_moves)
 
     def get_available_moves(self, board) -> List[Square]:
         current_square = board.find_piece(self)
@@ -93,55 +92,57 @@ class Pawn(Piece):
         return list_moves
 
 
+FIRST_STEP = 1
+
+
+def in_bounds(move) -> bool:
+    return move.row in range(0, 8) and move.col in range(0, 8)
+
+
+def get_position(current_square, current_piece, board, list_moves, step, direction):
+    next_square = Square.at(current_square.row + direction.row * step,
+                            current_square.col + direction.col * step)
+    if in_bounds(next_square):
+        piece = board.get_piece(next_square)
+        if not piece:
+            list_moves.append(next_square)
+        else:
+            if piece.player != current_piece.player:
+                list_moves.append(next_square)
+            return 0
+    else:
+        return 0
+    return 1
+
+
+def get_moves(current_piece, board, directions, not_king_or_knight):
+    current_square = board.find_piece(current_piece)
+    list_moves = []
+    for direction in directions:
+        continue_moves = get_position(current_square, current_piece, board, list_moves,
+                                      FIRST_STEP, direction)
+        if not_king_or_knight and continue_moves:
+            step = 2
+            while True:
+                continue_moves = get_position(current_square, current_piece, board,
+                                              list_moves, step, direction)
+                if not continue_moves:
+                    break
+                step += 1
+
+    return list_moves
+
+
 class Knight(Piece):
     """
     A class representing a chess knight.
     """
+    directions = [Square(1, -2), Square(2, -1), Square(2, 1), Square(1, 2),
+                  Square(-1, -2), Square(-2, -1), Square(-2, 1), Square(-1, 2)]
+    NOT_KING_OR_KNIGHT = 0
 
     def get_available_moves(self, board):
-        return []
-
-
-class MoveByDirection:
-    FIRST_STEP = 1
-
-    @staticmethod
-    def in_bounds(move) -> bool:
-        return move.row in range(0, 8) and move.col in range(0, 8)
-
-    @staticmethod
-    def get_position(current_square, current_piece, board, list_moves, step, direction):
-        next_square = Square.at(current_square.row + direction.row * step,
-                                current_square.col + direction.col * step)
-        if MoveByDirection.in_bounds(next_square):
-            piece = board.get_piece(next_square)
-            if not piece:
-                list_moves.append(next_square)
-            else:
-                if piece.player != current_piece.player:
-                    list_moves.append(next_square)
-                return 0
-        else:
-            return 0
-        return 1
-
-    @staticmethod
-    def get_moves(current_piece, board, directions, not_king):
-        current_square = board.find_piece(current_piece)
-        list_moves = []
-        for direction in directions:
-            continue_moves = MoveByDirection.get_position(current_square, current_piece, board, list_moves,
-                                                          MoveByDirection.FIRST_STEP, direction)
-            if not_king and continue_moves:
-                step = 2
-                while True:
-                    continue_moves = MoveByDirection.get_position(current_square, current_piece, board,
-                                                                  list_moves, step, direction)
-                    if not continue_moves:
-                        break
-                    step += 1
-
-        return list_moves
+        return get_moves(self, board, self.directions, self.NOT_KING_OR_KNIGHT)
 
 
 class Bishop(Piece):
@@ -149,10 +150,10 @@ class Bishop(Piece):
     A class representing a chess bishop.
     """
     directions = [Square(1, 1), Square(-1, 1), Square(-1, -1), Square(1, -1)]
-    NOT_KING = 1
+    NOT_KING_OR_KNIGHT = 1
 
     def get_available_moves(self, board):
-        return MoveByDirection.get_moves(self, board, self.directions, self.NOT_KING)
+        return get_moves(self, board, self.directions, self.NOT_KING_OR_KNIGHT)
 
 
 class Rook(Piece):
@@ -160,10 +161,10 @@ class Rook(Piece):
     A class representing a chess rook.
     """
     directions = [Square(1, 0), Square(-1, 0), Square(0, 1), Square(0, -1)]
-    NOT_KING = 1
+    NOT_KING_OR_KNIGHT = 1
 
     def get_available_moves(self, board):
-        return MoveByDirection.get_moves(self, board, self.directions, self.NOT_KING)
+        return get_moves(self, board, self.directions, self.NOT_KING_OR_KNIGHT)
 
 
 class Queen(Piece):
@@ -171,11 +172,11 @@ class Queen(Piece):
     A class representing a chess queen.
     """
     directions = [Square(1, 0), Square(-1, 0), Square(0, 1), Square(0, -1),
-                 Square(1, 1), Square(-1, 1), Square(-1, -1), Square(1, -1)]
-    NOT_KING = 1
+                  Square(1, 1), Square(-1, 1), Square(-1, -1), Square(1, -1)]
+    NOT_KING_OR_KNIGHT = 1
 
     def get_available_moves(self, board):
-        return MoveByDirection.get_moves(self, board, self.directions, self.NOT_KING)
+        return get_moves(self, board, self.directions, self.NOT_KING_OR_KNIGHT)
 
 
 class King(Piece):
@@ -184,7 +185,7 @@ class King(Piece):
     """
     directions = [Square(1, 0), Square(-1, 0), Square(0, 1), Square(0, -1),
                   Square(1, 1), Square(-1, 1), Square(-1, -1), Square(1, -1)]
-    NOT_KING = 0
+    NOT_KING_OR_KNIGHT = 0
 
     def get_available_moves(self, board):
-        return MoveByDirection.get_moves(self, board, self.directions, self.NOT_KING)
+        return get_moves(self, board, self.directions, self.NOT_KING_OR_KNIGHT)
