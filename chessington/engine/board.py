@@ -16,6 +16,7 @@ class Board:
     def __init__(self, player, board_state):
         self.current_player = Player.WHITE
         self.board = board_state
+        self.moves = 1
 
     @staticmethod
     def empty():
@@ -74,6 +75,17 @@ class Board:
         """
         moving_piece = self.get_piece(from_square)
         if moving_piece is not None and moving_piece.player == self.current_player:
+            piece_taken = self.get_piece(to_square) is not None
             self.set_piece(to_square, moving_piece)
             self.set_piece(from_square, None)
             self.current_player = self.current_player.opponent()
+            moving_piece.piece_moved(self.moves)
+            if type(moving_piece) is Pawn:
+                if to_square.row == 0 or to_square.row == 7:
+                    self.set_piece(to_square, Queen(self.current_player.opponent()))
+                if not piece_taken:
+                    possible_en_passant_square = Square.at(from_square.row, to_square.col)
+                    en_passant_piece = self.get_piece(possible_en_passant_square)
+                    if en_passant_piece:
+                        self.set_piece(possible_en_passant_square, None)
+            self.moves += 1
